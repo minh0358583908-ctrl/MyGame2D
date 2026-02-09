@@ -4,66 +4,133 @@ using UnityEngine;
 
 namespace PixelAdventure
 {
-
-    public enum CharacterState
+    public enum CharacterJumpState
     {
         Grounded, // đang ở mặt đất
         Jump1, // sau khi bấm nhảy lần 1 => cho phép bấm nhảy thêm
         Jump2, // sau khi bấm nhẩy lần 2 => ko thể bấm nhảy thêm => rơi tự do theo gia tốc trọng trường
     }
 
+    public enum CharacterMoveState
+    {
+        None, Left, Right, LeftToRight, RightToLeft // trạng thái di chuyển sang 2 bên
+    }
 
     public class CharacterBaseCtrl : MonoBehaviour
     {
+        public Animator charAnim;
         public float moveSpeed = 5f;
         public float jumpForce = 15f;
-
-        private Rigidbody2D rb;
-        private CharacterState state; // trạng thái hiện tại của nhân vật là gì
+        public Rigidbody2D rgb;
+        public CharacterJumpState jumpState = CharacterJumpState.Jump2; // trạng thái hiện tại của nhân vật là gì
+        public CharacterMoveState moveState = CharacterMoveState.None;
 
         void Awake()
         {
-            rb = GetComponent<Rigidbody2D>();
+            rgb ??= GetComponent<Rigidbody2D>();
             // khởi điểm trạng thái của nhân vật là rơi tự do
-            state = CharacterState.Jump2;
+            jumpState = CharacterJumpState.Jump2;
+            moveState = CharacterMoveState.None;
+            charAnim.ResetAndSetTrigger("Fall");
         }
 
         void Update()
         {
-            if (Input.GetKeyDown(KeyCode.A)) HandleMoveLeft();
-            if (Input.GetKeyDown(KeyCode.D)) HandleMoveRight();
-            if (Input.GetKeyDown(KeyCode.Space)) HandleJump();
-            //rb.velocity = new Vector2(move * moveSpeed, rb.velocity.y);
+            CheckUpdateMove();
+            CheckUpdateJump();
         }
 
         // mới ban đầu học thì học theo kiểu ý hiểu di chuyển theo thực tế
-        private void HandleMoveLeft()
+        private void CheckUpdateMove()
         {
-            // biết di chuyển theo hướng nào trc
-            // sau đó tính quãng đường di chuyển bằng vận tốc nhân thời gian
-            var moveSpace = moveSpeed * Time.deltaTime; // Time.deltaTime là thời gian gọi cách nhau của mỗi lần hàm Update bên trên kia được gọi
-            transform.position = new Vector3(transform.position.x - moveSpace, transform.position.y, transform.position.z);
-            // di chuyển sang trái nên sẽ chỉ thay đổi vị trí theo trục y
-        }
-
-
-        private void HandleMoveRight()
-        {
-            var moveSpace = moveSpeed * Time.deltaTime;
-            transform.position = new Vector3(transform.position.x + moveSpace, transform.position.y, transform.position.z);
-        }
-
-        private void HandleJump()
-        {
-            if (state == CharacterState.Grounded)
+            if (Input.GetKeyDown(KeyCode.A))
             {
-                state = CharacterState.Jump1;
-                rb.AddForce(Vector3.up * jumpForce);
+                // nhấn xuống (bao gồm cả giữ) => di chuyển sang trái
+                if (moveState == CharacterMoveState.Right)
+                    moveState = CharacterMoveState.RightToLeft;
+                else moveState = CharacterMoveState.Left;
             }
-            else if (state == CharacterState.Jump1)
+            else if (Input.GetKeyDown(KeyCode.D))
             {
-                state = CharacterState.Jump2;
-                rb.AddForce(Vector3.up * jumpForce);
+                // nhấn xuống (bao gồm cả giữ) => di chuyển sang phải
+                if (moveState == CharacterMoveState.Left)
+                    moveState = CharacterMoveState.LeftToRight;
+                else moveState = CharacterMoveState.Right;
+            }
+            else if (Input.GetKeyUp(KeyCode.A))
+            {
+                // thả tay ra => ko di chuyển
+                if (moveState == CharacterMoveState.RightToLeft ||
+                    moveState == CharacterMoveState.LeftToRight)
+                    moveState = CharacterMoveState.Right;
+                else moveState = CharacterMoveState.None;
+            }
+            else if (Input.GetKeyUp(KeyCode.D))
+            {
+                // thả tay ra => ko di chuyển
+                if (moveState == CharacterMoveState.RightToLeft ||
+                    moveState == CharacterMoveState.LeftToRight)
+                    moveState = CharacterMoveState.Left;
+                else moveState = CharacterMoveState.None;
+            }
+
+            if (moveState == CharacterMoveState.None)
+            {
+                rgb.velocity = new Vector2(
+                    0, // ko cho phép di chuyển thêm ngay khi thả tay
+                    rgb.velocity.y
+                );
+                
+                // // thay đổi hình ảnh nhân vật
+                // if (jumpState == CharacterJumpState.Grounded)
+                //     charAnim.ResetAndSetTrigger("Idle");
+                return;
+            }
+
+            rgb.velocity = new Vector2(
+                moveState is CharacterMoveState.Left or CharacterMoveState.RightToLeft ? -moveSpeed : moveSpeed, // chỉ điều khiển X
+                rgb.velocity.y // giữ nguyên lực rơi / nhảy
+            );
+            // if (jumpState == CharacterJumpState.Grounded)
+            //     charAnim.ResetAndSetTrigger("Idle");
+
+            // // tính quãng đường di chuyển bằng vận tốc nhân thời gian
+            // var moveSpace = moveSpeed * Time.deltaTime; // Time.deltaTime là thời gian gọi cách nhau của mỗi lần hàm Update bên trên kia được gọi
+
+            // if (moveState is CharacterMoveState.Left or CharacterMoveState.RightToLeft)
+            // {
+            //     moveSpace = -moveSpace;
+            // }
+            // if (moveState == CharacterMoveState.Right)
+            // {
+            //     moveSpace = moveSpace; // giữ nguyên
+            // }
+
+            // di chuyển sang trái nên sẽ chỉ thay đổi vị trí theo trục x
+            // transform.position = new Vector3(transform.position.x + moveSpace, transform.position.y, transform.position.z);
+        }
+
+        private void CheckUpdateJump()
+        {
+            var hasTriggerJump = Input.GetKeyDown(KeyCode.W);
+            if (!hasTriggerJump) return;
+
+            Debug.Log("HandleTriggerJump");
+            if (jumpState == CharacterJumpState.Grounded)
+            {
+                Debug.Log("HandleTriggerJump => Jump1");
+                jumpState = CharacterJumpState.Jump1;
+                rgb.AddForce(Vector3.up * jumpForce, ForceMode2D.Impulse);
+            }
+            else if (jumpState == CharacterJumpState.Jump1)
+            {
+                Debug.Log("HandleTriggerJump => Jump2");
+                jumpState = CharacterJumpState.Jump2;
+
+                // tại jump 1 ko cho phép cộng dồn lực nhảy => nhảy cao tối đa bằng 2 lần jump 1
+                rgb.velocity = new Vector2(rgb.velocity.x, 0); // commend dòng này và test thử
+
+                rgb.AddForce(Vector3.up * jumpForce, ForceMode2D.Impulse);
             }
             else
             {
@@ -76,7 +143,7 @@ namespace PixelAdventure
         {
             if (collision.gameObject.CompareTag("Ground"))
             {
-                state = CharacterState.Grounded;
+                jumpState = CharacterJumpState.Grounded;
             }
         }
 
@@ -88,5 +155,16 @@ namespace PixelAdventure
         //        isGrounded = false;
         //    }
         //}
+    }
+
+    public static class Helper
+    {
+        public static void ResetAndSetTrigger(this Animator animator, string state)
+        {
+            foreach (var param in animator.parameters)
+                if (param.type == AnimatorControllerParameterType.Trigger)
+                    animator.ResetTrigger(param.name);
+            animator.SetTrigger(state);
+        }
     }
 }
