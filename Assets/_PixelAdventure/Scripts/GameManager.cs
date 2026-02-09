@@ -1,17 +1,13 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+// nhớ mỗi game cần đặt trong 1 name space riêng thì các class có thể đặt tên trùng nhau sẽ ko bị lỗi
+// => mỗi game sử dụng 1 bộ scripts riêng
+// scripts nào mà game nào cũng dùng thì đặt namespace riêng
+namespace PixelAdventure
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
+    public class GameManager : MonoBehaviour
     {
         
     }
