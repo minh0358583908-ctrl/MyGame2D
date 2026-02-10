@@ -10,9 +10,9 @@ namespace BaseGame
     {
         private static string BasePath;
 
-        public static void SetBasePath(string path)
+        public static void SetBasePath()
         {
-            BasePath = path;
+            BasePath = Application.persistentDataPath + "/UserData_";
         }
 
         public static T Load<T>()
