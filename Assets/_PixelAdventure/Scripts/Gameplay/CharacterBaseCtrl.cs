@@ -31,7 +31,7 @@ namespace PixelAdventure
             // khởi điểm trạng thái của nhân vật là rơi tự do
             jumpState = CharacterJumpState.Jump2;
             moveState = CharacterMoveState.None;
-            charAnim.ResetAndSetTrigger("Fall");
+            // charAnim.ResetAndSetTrigger("Fall");
         }
 
         void Update()
