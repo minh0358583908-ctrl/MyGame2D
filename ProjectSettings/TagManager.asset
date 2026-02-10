@@ -7,6 +7,7 @@ TagManager:
   - nen
   - vatcan
   - vatcan2
+  - Ground
   layers:
   - Default
   - TransparentFX
@@ -14,8 +15,8 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
+  - Player
+  - Ground
   - 
   - 
   - 
@@ -41,6 +42,9 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Background
+    uniqueID: 2378227263
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
