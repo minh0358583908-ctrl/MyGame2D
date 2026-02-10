@@ -167,4 +167,5 @@ namespace PixelAdventure
             animator.SetTrigger(state);
         }
     }
+
 }
